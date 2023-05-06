@@ -1,4 +1,8 @@
 #!/usr/bin/python3
+"""
+Solultion to 0.Minimum Operations 
+"""
+from sys import argv
 
 def minOperations(n):
   """
