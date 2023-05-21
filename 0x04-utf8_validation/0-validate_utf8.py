@@ -1,51 +1,72 @@
 #!/usr/bin/python3
 """
-Write a method that determines if a given data set represents a valid UTF-8 encoding.
+Write a method that determines if a given data set
+represents a valid UTF-8 encoding.
 
 Prototype: def validUTF8(data)
-Return: True if data is a valid UTF-8 encoding, else return False
+Return: True if data is a valid UTF-8 encoding, else
+return False
 A character in UTF-8 can be 1 to 4 bytes long
 The data set can contain multiple characters
 The data will be represented by a list of integers
-Each integer represents 1 byte of data, therefore you 
-only need to handle the 8 least significant bits of each integer
+Each integer represents 1 byte of data, therefore you
+only need to handle the 8 least significant bits of each
+integer
 """
 
 
 def validUTF8(data):
+    """_summary_
+
+    Args:
+            data (list[int]): a list of integers
     """
-    :type: List[int]
-    :rtype: bool
-    """
-    
-    # Number of bytes in the current UTF-8 character
-    n_bytes = 0
+    expected_continuation_bytes = 0
 
-    # Mask to check if the most significant bit (8th bit from the left) is set or not
-    mask1 = 1 << 7
+    # Define bit patterns for UTF-8 encoding
+    UTF8_BIT_1 = 1 << 7  # 10000000
+    UTF8_BIT_2 = 1 << 6  # 01000000
 
-    # Mask to check if the second most significant bit is set or not
-    mask2 = 1 << 6
-    for num in data:
-        # Get the number of set most significant bits in the byte if
-        # this is the starting byte of an UTF-8 character.
-        mask = 1 << 7
-        if n_bytes == 0:
-            while mask & num:
-                n_bytes += 1
-                mask = mask >> 1
-                # 1 byte characters
-                if n_bytes == 0:
-                    continue
+    # Loop over each byte in the input data
+    for byte in data:
+        # Initialize a mask to check for leading
+        # 1's in the current byte
+        leading_one_mask = 1 << 7
 
-                # Invalid scenarios according to the rules of the problem.
-                if n_bytes == 1 or n_bytes > 4:
-                    return False
-        else:
-           # If this byte is a part of an existing UTF-8 character, then we
-           # simply have to look at the two most significant bits and we make
-           # use of the masks we defined before.
-           if not (num & mask1 and not (num & mask2)):
+        # If we are not currently expecting any
+        # continuation bytes
+        if expected_continuation_bytes == 0:
+            # Count the number of leading 1's in the
+            # current byte to determine the number of
+            # continuation bytes
+            while leading_one_mask & byte:
+                expected_continuation_bytes += 1
+                leading_one_mask = leading_one_mask >> 1
+
+            # If the byte is not a multi-byte sequence,
+            # move to the next byte
+            if expected_continuation_bytes == 0:
+                continue
+
+            # If the number of continuation bytes is not
+            # between 2 and 4, the sequence is invalid
+            if expected_continuation_bytes == 1 or\
+                    expected_continuation_bytes > 4:
                 return False
-        n_bytes -= 1
+
+        # If we are expecting continuation bytes
+        else:
+            # Check that the byte starts with a "10"
+            # prefix and not a "11" prefix
+            if not (byte & UTF8_BIT_1 and not (byte & UTF8_BIT_2)):
+                return False
+
+        # Decrement the expected number of continuation bytes
+        expected_continuation_bytes -= 1
+
+    # If we have processed all bytes and are not expecting
+    # any more continuation bytes, the sequence is valid
+    if expected_continuation_bytes == 0:
         return True
+    else:
+        return False
